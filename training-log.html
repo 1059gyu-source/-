@@ -442,7 +442,6 @@ function renderToday(){
   html+='<section class="card"><h2>몸 상태</h2><div class="fields">'
     +'<div class="field"><label for="f-weight">체중 (kg)</label><input class="num" id="f-weight" data-f="weight" inputmode="decimal" value="'+(d.weight==null?"":esc(d.weight))+'"></div>'
     +'<div class="field"><label for="f-sleep">수면 (시간)</label><input class="num" id="f-sleep" data-f="sleep" inputmode="decimal" value="'+(d.sleep==null?"":esc(d.sleep))+'"></div></div>'
-    +'<div class="field"><span class="lbl">식단</span><div class="seg">'+["부족","적정","초과"].map(function(t){return '<button data-act="diet" data-v="'+t+'" aria-pressed="'+(d.diet===t)+'">'+t+'</button>';}).join("")+'</div></div>'
     +'<div class="field"><span class="lbl">세트 완료 시 휴식 타이머</span><div class="chips">'+[0,60,90,120].map(function(s){return '<button class="chip" data-act="rest" data-v="'+s+'" aria-pressed="'+(rest===s)+'">'+(s?s+"초":"끔")+'</button>';}).join("")+'</div></div></section>';
   html+=d.exercises.map(function(e,i){return exCard(e,i,d.exercises.length);}).join("");
   if(!d.exercises.length)html+='<section class="card"><p class="empty">아직 기록한 종목이 없어요. 아래에서 종목을 골라 첫 세트를 입력하세요.</p></section>';
@@ -472,7 +471,8 @@ function mealsCard(d){
   }).join("");
   var need=d.meals.some(function(m){return m.kcal==null||m.protein==null;});
   var err=S.estErr?'<div class="notice bad">'+esc(S.estErr)+'</div>':"";S.estErr="";
-  return '<section class="card"><h2>식단</h2><div id="bars">'+barsHtml(d)+'</div>'
+  var diet='<div class="field"><span class="lbl">오늘 식단 평가</span><div class="seg">'+["부족","적정","초과"].map(function(t){return '<button data-act="diet" data-v="'+t+'" aria-pressed="'+(d.diet===t)+'">'+t+'</button>';}).join("")+'</div></div>';
+  return '<section class="card"><h2>식단</h2><div id="bars">'+barsHtml(d)+'</div>'+diet
     +(rows||'<p class="empty">먹은 걸 적어서 추가하세요. 칼로리는 직접 넣거나 AI가 추정해 줘요.</p>')
     +'<div class="addrow"><input type="text" id="newMeal" placeholder="예: 닭가슴살 200g + 밥 1공기" aria-label="먹은 것" enterkeyhint="done"><button class="btn primary" data-act="addMeal">추가</button></div>'
     +err
