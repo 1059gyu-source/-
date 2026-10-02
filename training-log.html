@@ -621,7 +621,7 @@ function mdText(d){
   if(pk.length){L.push("## 통증");pk.forEach(function(a){var p=d.pain[a];L.push("- "+a+": "+LV[p.level]+(p.note?" — "+p.note:""));});if(d.morning)L.push("- 다음 날 아침 관절: "+(d.morning==="ok"?"이상 없음":"통증 있음"));L.push("");}
   if(d.note){L.push("## 메모",d.note,"");}
   if(d.closing){L.push("## 코치 평가",d.closing,"");}
-  return L.join("\n");
+  return L.join("\n").replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u200D]/gu,"").replace(/[ \t]+$/gm,"");
 }
 function obsErrCopy(e){
   var c=e&&e.code;
