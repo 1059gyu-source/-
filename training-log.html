@@ -122,6 +122,22 @@ input.num{font-family:var(--font-num);font-weight:600;font-size:22px;text-align:
 
 pre.summary{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--font-body);font-size:14px}
 .empty{color:var(--muted);font-size:14px}
+#bars{display:flex;flex-direction:column;gap:12px}
+.bar{display:flex;flex-direction:column;gap:6px}
+.bar-h{display:flex;justify-content:space-between;gap:8px;font-size:13px;align-items:baseline}
+.bar-h span:first-child{color:var(--muted)}
+.bar-v{font-family:var(--font-num);font-size:16px;font-variant-numeric:tabular-nums}
+.track{height:10px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:99px}
+.fill.good{background:var(--good)}.fill.warn{background:var(--warn)}
+.meal{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.meal:first-of-type{border-top:0;padding-top:0}
+.meal-t{overflow-wrap:anywhere}
+.meal-n{display:grid;grid-template-columns:1fr 1fr 40px;gap:6px;align-items:center}
+input.num.sm{font-size:18px;height:40px}
+.meal .del{border:0;background:transparent;color:var(--muted);height:40px}
+.closing{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px}
+textarea[hidden]{display:none}
 .chat{display:flex;flex-direction:column;gap:10px}
 .msg{max-width:86%;padding:10px 13px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.55}
 .msg.user{align-self:flex-end;background:var(--accent-soft);border-bottom-right-radius:5px}
@@ -211,17 +227,18 @@ function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 
 /* ---------- 상태 ---------- */
 var TODAY=ymd(new Date());
-var S={days:{},date:TODAY,tab:"today",armed:null,trendEx:"",coach:{messages:[],summary:"",profile:"",updatedAt:0},draft:"",sample:null,sampleChecked:false,coachBusy:false,liveText:""};
+var S={days:{},date:TODAY,tab:"today",armed:null,trendEx:"",coach:{messages:[],summary:"",profile:"",updatedAt:0,goal:{kcal:2850,protein:160}},draft:"",sample:null,sampleChecked:false,coachBusy:false,liveText:""};
 var dbh=null;
 
-function blank(date){return {date:date,split:"",exercises:[],weight:null,sleep:null,diet:"",pain:{},morning:null,note:"",updatedAt:0};}
+function blank(date){return {date:date,split:"",exercises:[],weight:null,sleep:null,diet:"",pain:{},morning:null,note:"",updatedAt:0,meals:[],closing:""};}
 function day(){if(!S.days[S.date])S.days[S.date]=blank(S.date);return S.days[S.date];}
-function hasContent(d){return !!(d&&(d.split||d.exercises.length||d.weight!=null||d.sleep!=null||d.diet||Object.keys(d.pain||{}).length||d.note||d.morning));}
+function hasContent(d){return !!(d&&(d.split||d.exercises.length||d.weight!=null||d.sleep!=null||d.diet||Object.keys(d.pain||{}).length||d.note||d.morning||(d.meals&&d.meals.length)||d.closing));}
 function normalize(d,date){
   var b=blank(date);
   if(!d||typeof d!=="object")return b;
   b.split=d.split||"";b.weight=d.weight==null?null:d.weight;b.sleep=d.sleep==null?null:d.sleep;
-  b.diet=d.diet||"";b.pain=(d.pain&&typeof d.pain==="object")?d.pain:{};b.morning=d.morning||null;b.note=d.note||"";b.updatedAt=d.updatedAt||0;
+  b.diet=d.diet||"";b.pain=(d.pain&&typeof d.pain==="object")?d.pain:{};b.morning=d.morning||null;b.note=d.note||"";b.updatedAt=d.updatedAt||0;b.closing=d.closing||"";
+  b.meals=(Array.isArray(d.meals)?d.meals:[]).map(function(m){return {id:m.id||uid(),text:String(m.text||""),kcal:m.kcal==null?null:m.kcal,protein:m.protein==null?null:m.protein};});
   b.exercises=(Array.isArray(d.exercises)?d.exercises:[]).map(function(e){
     return {id:e.id||uid(),name:String(e.name||""),sets:(Array.isArray(e.sets)?e.sets:[]).map(function(s){return {w:s.w==null?null:s.w,r:s.r==null?null:s.r,done:!!s.done};})};
   });
@@ -239,7 +256,7 @@ function lsLoad(){
 }
 var LS_COACH="tlog.coach",coachTimer=null;
 function coachLoad(){
-  try{var o=JSON.parse(lsGet(LS_COACH)||"null");if(o&&typeof o==="object"){S.coach.messages=Array.isArray(o.messages)?o.messages:[];S.coach.summary=o.summary||"";S.coach.profile=o.profile||"";S.coach.updatedAt=o.updatedAt||0;}}catch(e){}
+  try{var o=JSON.parse(lsGet(LS_COACH)||"null");if(o&&typeof o==="object"){S.coach.messages=Array.isArray(o.messages)?o.messages:[];S.coach.summary=o.summary||"";S.coach.profile=o.profile||"";S.coach.updatedAt=o.updatedAt||0;if(o.goal&&o.goal.kcal&&o.goal.protein)S.coach.goal=o.goal;}}catch(e){}
   if(!S.coach.profile)S.coach.profile=PROFILE_DEFAULT;
 }
 function coachPersist(){
@@ -292,7 +309,7 @@ async function initDb(){
       var cs=await db.doc("meta/coach").get();
       if(cs.exists){
         var cr=cs.data();
-        if((cr.updatedAt||0)>(S.coach.updatedAt||0)){S.coach.messages=cr.messages||[];S.coach.summary=cr.summary||"";S.coach.profile=cr.profile||S.coach.profile;S.coach.updatedAt=cr.updatedAt||0;lsSet(LS_COACH,JSON.stringify(S.coach));}
+        if((cr.updatedAt||0)>(S.coach.updatedAt||0)){S.coach.messages=cr.messages||[];S.coach.summary=cr.summary||"";S.coach.profile=cr.profile||S.coach.profile;if(cr.goal&&cr.goal.kcal&&cr.goal.protein)S.coach.goal=cr.goal;S.coach.updatedAt=cr.updatedAt||0;lsSet(LS_COACH,JSON.stringify(S.coach));}
       }else if(S.coach.updatedAt){coachPersist();}
     }catch(e){}
     var a=document.activeElement;
@@ -332,6 +349,7 @@ function warnings(d){
   Object.keys(d.pain).forEach(function(a){var p=d.pain[a];if(p.level>=2)w.push({t:"bad",m:a+" "+LV[p.level]+": 해당 동작은 멈추고 무게는 동결. 다음 날 아침 관절 통증을 확인하세요."});});
   return w;
 }
+function mealTotals(d){var k=0,p=0;(d.meals||[]).forEach(function(m){k+=m.kcal||0;p+=m.protein||0;});return {kcal:k,protein:p};}
 function summaryText(d){
   var dt=parse(d.date);
   var L=["오늘 총정리 ("+(d.split||"운동")+" · "+WD[dt.getDay()]+"요일 · "+(dt.getMonth()+1)+"/"+dt.getDate()+")"];
@@ -341,6 +359,7 @@ function summaryText(d){
   if(d.sleep!=null)v.push("수면 "+fmt(d.sleep)+"시간");
   if(d.diet)v.push("식단 "+d.diet);
   if(v.length)L.push(v.join(" · "));
+  if(d.meals&&d.meals.length){var mt=mealTotals(d);L.push("식단: "+d.meals.map(function(m){return m.text;}).join(" / "));L.push("섭취 "+Math.round(mt.kcal).toLocaleString("ko-KR")+"kcal · 단백질 "+Math.round(mt.protein)+"g (목표 "+S.coach.goal.kcal+"/"+S.coach.goal.protein+")");}
   var vol=dayVol(d);if(vol>0)L.push("총 볼륨 "+Math.round(vol).toLocaleString("ko-KR")+"kg");
   var pk=Object.keys(d.pain);
   if(pk.length)L.push("통증: "+pk.map(function(a){var p=d.pain[a];return a+" "+LV[p.level]+(p.note?"("+p.note+")":"");}).join(", "));
@@ -354,7 +373,7 @@ var view=document.getElementById("view");
 function render(){
   var y=window.scrollY;
   document.querySelectorAll(".tabs button").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.tab===S.tab));});
-  view.innerHTML=S.tab==="today"?renderToday():S.tab==="coach"?renderCoach():S.tab==="history"?renderHistory():renderTrend();
+  view.innerHTML=S.tab==="today"?renderToday():S.tab==="coach"?renderCoach():S.tab==="history"?renderHistory()+backupHtml():renderTrend();
   window.scrollTo(0,y);
 }
 function dateLabel(){
@@ -430,9 +449,46 @@ function renderToday(){
   html+='<section class="card"><h2>종목 추가</h2><div class="addrow"><input type="text" id="newEx" placeholder="종목 이름" aria-label="종목 이름" enterkeyhint="done"><button class="btn primary" data-act="addEx">추가</button></div>'
     +(sug.length?'<div class="chips">'+sug.map(function(n){return '<button class="chip" data-act="addEx" data-name="'+esc(n)+'">'+esc(n)+'</button>';}).join("")+'</div>':"")+'</section>';
   html+=painHtml(d);
+  html+=mealsCard(d);
   html+='<section class="card"><h2>메모</h2><textarea id="f-note" data-f="note" aria-label="메모" placeholder="코치 노트, 컨디션, 다음에 할 것">'+esc(d.note)+'</textarea></section>';
+  html+=closeCard(d);
   html+='<section class="card"><h2>오늘 총정리</h2><pre class="summary" id="summary">'+esc(summaryText(d))+'</pre><button class="btn primary" data-act="copy" id="copyBtn">복사해서 채팅·옵시디언에 붙여넣기</button></section>';
   return html;
+}
+function barsHtml(d){
+  var t=mealTotals(d),g=S.coach.goal;
+  function bar(label,val,goal,unit){
+    var r=goal?val/goal:0,cls=r>1.1?"warn":r>=0.95?"good":"";
+    return '<div class="bar"><div class="bar-h"><span>'+label+'</span><span class="bar-v">'+Math.round(val).toLocaleString("ko-KR")+" / "+goal.toLocaleString("ko-KR")+unit+" · "+Math.round(r*100)+'%</span></div><div class="track"><div class="fill '+cls+'" style="width:'+Math.min(100,r*100).toFixed(1)+'%"></div></div></div>';
+  }
+  return bar("칼로리",t.kcal,g.kcal,"kcal")+bar("단백질",t.protein,g.protein,"g");
+}
+function mealsCard(d){
+  var rows=d.meals.map(function(m){
+    return '<div class="meal"><div class="meal-t">'+esc(m.text)+'</div><div class="meal-n">'
+      +'<input class="num sm" inputmode="numeric" data-f="mk" data-m="'+m.id+'" value="'+(m.kcal==null?"":esc(m.kcal))+'" placeholder="kcal" aria-label="칼로리">'
+      +'<input class="num sm" inputmode="numeric" data-f="mp" data-m="'+m.id+'" value="'+(m.protein==null?"":esc(m.protein))+'" placeholder="단백질 g" aria-label="단백질(g)">'
+      +'<button class="del" data-act="delMeal" data-m="'+m.id+'" aria-label="식사 삭제">✕</button></div></div>';
+  }).join("");
+  var need=d.meals.some(function(m){return m.kcal==null||m.protein==null;});
+  var err=S.estErr?'<div class="notice bad">'+esc(S.estErr)+'</div>':"";S.estErr="";
+  return '<section class="card"><h2>식단</h2><div id="bars">'+barsHtml(d)+'</div>'
+    +(rows||'<p class="empty">먹은 걸 적어서 추가하세요. 칼로리는 직접 넣거나 AI가 추정해 줘요.</p>')
+    +'<div class="addrow"><input type="text" id="newMeal" placeholder="예: 닭가슴살 200g + 밥 1공기" aria-label="먹은 것" enterkeyhint="done"><button class="btn primary" data-act="addMeal">추가</button></div>'
+    +err
+    +(need&&d.meals.length?'<button class="btn" data-act="estimate"'+(S.sample&&!S.estBusy?"":" disabled")+'>'+(S.estBusy?"추정 중…":"AI로 칼로리·단백질 추정")+'</button>':"")
+    +'<details><summary class="lbl">하루 목표 설정</summary><div class="fields" style="margin-top:8px">'
+    +'<div class="field"><label for="g-k">칼로리 (kcal)</label><input class="num" id="g-k" data-f="goalK" inputmode="numeric" value="'+S.coach.goal.kcal+'"></div>'
+    +'<div class="field"><label for="g-p">단백질 (g)</label><input class="num" id="g-p" data-f="goalP" inputmode="numeric" value="'+S.coach.goal.protein+'"></div></div></details></section>';
+}
+function closeCard(d){
+  var body=S.closeBusy?'<div class="closing" id="closeLive">'+(S.closeLive?esc(S.closeLive):"코치가 하루를 정리하는 중…")+'</div>'
+    :d.closing?'<div class="closing">'+esc(d.closing)+'</div>':'<p class="empty">운동과 식단을 다 기록했으면 마감하세요. 코치가 잘한 점, 아쉬운 점, 내일 보완할 점을 정리해 줘요.</p>';
+  var err=S.closeErr?'<div class="notice bad">'+esc(S.closeErr)+'</div>':"";S.closeErr="";
+  return '<section class="card"><h2>하루 마감</h2>'+body+err+'<button class="btn primary" data-act="closeDay"'+(S.sample&&!S.closeBusy?"":" disabled")+'>'+(d.closing?"다시 평가받기":"하루 마감하고 평가받기")+'</button></section>';
+}
+function backupHtml(){
+  return '<section class="card"><h2>백업</h2><p class="empty">모든 기록을 한 번에 복사해 둡니다.</p><button class="btn" id="backupBtn" data-act="backup">전체 기록 복사</button><textarea id="backupText" hidden readonly aria-label="백업 내용"></textarea></section>';
 }
 function renderHistory(){
   var ks=Object.keys(S.days).filter(function(k){return hasContent(S.days[k]);}).sort().reverse();
@@ -487,6 +543,7 @@ function renderTrend(){
 function refreshLive(){
   var d=day();
   var sm=document.getElementById("summary");if(sm)sm.textContent=summaryText(d);
+  var bars=document.getElementById("bars");if(bars)bars.innerHTML=barsHtml(d);
   var w=document.getElementById("warns");if(w)w.innerHTML=noticeHtml(warnings(d));
   d.exercises.forEach(function(e){var el=document.querySelector('[data-vol="'+e.id+'"]');if(el)el.textContent=volText(e);});
 }
@@ -508,7 +565,7 @@ function systemText(){
   var td=S.days[TODAY]&&hasContent(S.days[TODAY])?summaryText(S.days[TODAY]):"아직 기록 없음";
   var prev=ks.filter(function(k){return k<TODAY;}).slice(-4).map(function(k){return summaryText(S.days[k]);}).join("\n\n")||"없음";
   var now=new Date();
-  return PERSONA+"\n\n"+S.coach.profile+"\n\n[이전 대화 요약]\n"+(S.coach.summary||"(아직 없음)")+"\n\n[최근 체중] "+wts+"\n\n[오늘 기록]\n"+td+"\n\n[최근 세션]\n"+prev+"\n\n오늘 날짜: "+TODAY+" (현재 시각 "+pad(now.getHours())+":"+pad(now.getMinutes())+")";
+  return PERSONA+"\n\n"+S.coach.profile+"\n\n[이전 대화 요약]\n"+(S.coach.summary||"(아직 없음)")+"\n\n[일일 목표] 칼로리 "+S.coach.goal.kcal+"kcal · 단백질 "+S.coach.goal.protein+"g\n\n[최근 체중] "+wts+"\n\n[오늘 기록]\n"+td+"\n\n[최근 세션]\n"+prev+"\n\n오늘 날짜: "+TODAY+" (현재 시각 "+pad(now.getHours())+":"+pad(now.getMinutes())+")";
 }
 function msgHtml(m){return '<div class="msg '+(m.role==="user"?"user":"coach")+(m.err?" err":"")+'">'+esc(m.content)+'</div>';}
 function renderCoach(){
@@ -569,6 +626,51 @@ async function initSample(){
   S.sampleChecked=true;
   var a=document.activeElement;
   if(S.tab==="coach"&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render();
+}
+
+function addMeal(){
+  var i=document.getElementById("newMeal"),t=((i&&i.value)||"").trim();
+  if(!t)return;
+  day().meals.push({id:uid(),text:t,kcal:null,protein:null});
+  touch();render();
+}
+async function estimate(){
+  var d=day(),date=d.date,targets=d.meals.filter(function(m){return m.kcal==null||m.protein==null;});
+  if(!targets.length||!S.sample||S.estBusy)return;
+  S.estBusy=true;render();
+  try{
+    var list=targets.map(function(m){return {id:m.id,text:m.text};});
+    var res=await S.sample.json('다음 식사 목록의 대략적인 칼로리(kcal)와 단백질(g)을 추정해. 한국 음식 기준 보통 1인분으로 가정하고, 양이 적혀 있으면 그걸 따라. JSON 배열만 출력: [{"id":"...","kcal":숫자,"protein":숫자}]\n\n'+JSON.stringify(list),{modelTier:"quick"});
+    if(Array.isArray(res))res.forEach(function(r){
+      var m=d.meals.find(function(x){return x.id===r.id;});if(!m)return;
+      var k=num(r.kcal),pr=num(r.protein);
+      if(m.kcal==null&&k!=null)m.kcal=Math.round(k);
+      if(m.protein==null&&pr!=null)m.protein=Math.round(pr);
+    });
+    d.updatedAt=Date.now();persist(date);
+  }catch(e){S.estErr=errCopy(e&&e.code);}
+  S.estBusy=false;render();
+}
+async function closeDay(){
+  var d=day();
+  if(!S.sample||S.closeBusy)return;
+  var date=d.date;
+  S.closeBusy=true;S.closeLive="";render();
+  var g=S.coach.goal;
+  var prompt=PERSONA+"\n\n"+S.coach.profile+"\n\n[일일 목표] 칼로리 "+g.kcal+"kcal · 단백질 "+g.protein+"g\n\n["+md(date)+" 기록]\n"+summaryText(d)+"\n\n위 하루를 마감 평가해줘. 형식: 1) 오늘 잘한 점 2) 아쉬운 점(운동·식단·수면·통증 중 기록에 근거해서) 3) 내일 보완할 것 2~3개. 각 항목 1~2문장, 반말 코치 톤, 전체 8줄 이내.";
+  try{
+    var r=await S.sample(prompt,{cache:false,onText:function(u){S.closeLive=u.text;var el=document.getElementById("closeLive");if(el)el.textContent=u.text;}});
+    d.closing=r.text;d.updatedAt=Date.now();persist(date);
+  }catch(e){S.closeErr=errCopy(e&&e.code);}
+  S.closeBusy=false;S.closeLive="";render();
+}
+async function backup(){
+  var txt=JSON.stringify({days:S.days,coach:{summary:S.coach.summary,profile:S.coach.profile,goal:S.coach.goal}},null,1);
+  var ok=false;
+  try{await navigator.clipboard.writeText(txt);ok=true;}catch(e){}
+  var b=document.getElementById("backupBtn"),ta=document.getElementById("backupText");
+  if(!ok&&ta){ta.hidden=false;ta.value=txt;try{ta.select();}catch(e){}}
+  if(b){b.textContent=ok?"복사했어요":"아래 글을 전체 선택해 복사하세요";}
 }
 
 /* ---------- 타이머 ---------- */
@@ -661,6 +763,11 @@ document.addEventListener("click",function(ev){
       if(d.pain[b.dataset.area]){d.pain[b.dataset.area].level=+b.dataset.lv;touch();render();}break;
     case "morning":d.morning=b.dataset.v;touch();render();break;
     case "copy":copySummary();break;
+    case "addMeal":addMeal();break;
+    case "delMeal":d.meals=d.meals.filter(function(m){return m.id!==b.dataset.m;});touch();render();break;
+    case "estimate":estimate();break;
+    case "closeDay":closeDay();break;
+    case "backup":backup();break;
     case "coachSend":var ci=document.getElementById("coachInput");coachSend(ci&&ci.value);break;
     case "coachAsk":coachSend(b.dataset.q);break;
     case "coachStop":if(coachCtl)coachCtl.abort();break;
@@ -674,6 +781,8 @@ document.addEventListener("input",function(ev){
   var d=day();
   if(f==="coachDraft"){S.draft=t.value;return;}
   if(f==="profile"){S.coach.profile=t.value;coachPersist();return;}
+  if(f==="mk"||f==="mp"){var mm=d.meals.find(function(x){return x.id===t.dataset.m;});if(!mm)return;mm[f==="mk"?"kcal":"protein"]=num(t.value);touch();refreshLive();return;}
+  if(f==="goalK"||f==="goalP"){var gv=num(t.value);if(gv!=null&&gv>0){S.coach.goal[f==="goalK"?"kcal":"protein"]=gv;coachPersist();refreshLive();}return;}
   if(f==="w"||f==="r"){
     var e=findEx(t.dataset.ex);if(!e||!e.sets[+t.dataset.i])return;
     e.sets[+t.dataset.i][f]=num(t.value);
@@ -689,6 +798,7 @@ document.addEventListener("change",function(ev){
 });
 document.addEventListener("keydown",function(ev){
   if(ev.key==="Enter"&&ev.target.id==="newEx"){ev.preventDefault();addExercise(ev.target.value);}
+  if(ev.key==="Enter"&&ev.target.id==="newMeal"){ev.preventDefault();addMeal();}
   if(ev.key==="Enter"&&!ev.shiftKey&&!ev.isComposing&&ev.target.id==="coachInput"){ev.preventDefault();coachSend(ev.target.value);}
 });
 
