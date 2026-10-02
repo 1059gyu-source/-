@@ -120,7 +120,6 @@ input.num{font-family:var(--font-num);font-weight:600;font-size:22px;text-align:
 .lv button[aria-pressed="true"].l1{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);font-weight:700}
 .lv button[aria-pressed="true"].l2,.lv button[aria-pressed="true"].l3{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);font-weight:700}
 
-pre.summary{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--font-body);font-size:14px}
 .empty{color:var(--muted);font-size:14px}
 #bars{display:flex;flex-direction:column;gap:12px}
 .bar{display:flex;flex-direction:column;gap:6px}
@@ -548,7 +547,6 @@ function renderToday(){
   html+=mealsCard(d);
   html+='<section class="card"><h2>메모</h2><textarea id="f-note" data-f="note" aria-label="메모" placeholder="코치 노트, 컨디션, 다음에 할 것">'+esc(d.note)+'</textarea></section>';
   html+=closeCard(d);
-  html+='<section class="card"><h2>오늘 총정리</h2><pre class="summary" id="summary">'+esc(summaryText(d))+'</pre><button class="btn primary" data-act="copy" id="copyBtn">복사해서 채팅·옵시디언에 붙여넣기</button></section>';
   return html;
 }
 function barsHtml(d){
@@ -715,8 +713,7 @@ function renderTrend(){
 /* ---------- 입력 중 갱신(포커스 유지) ---------- */
 function refreshLive(){
   var d=day();
-  var sm=document.getElementById("summary");if(sm)sm.textContent=summaryText(d);
-  var bars=document.getElementById("bars");if(bars)bars.innerHTML=barsHtml(d);
+    var bars=document.getElementById("bars");if(bars)bars.innerHTML=barsHtml(d);
   var w=document.getElementById("warns");if(w)w.innerHTML=noticeHtml(warnings(d));
   d.exercises.forEach(function(e){var el=document.querySelector('[data-vol="'+e.id+'"]');if(el)el.textContent=volText(e);});
 }
@@ -877,16 +874,6 @@ function addExercise(name){
   d.exercises.push({id:uid(),name:name,sets:sets});
   touch();classify([name]);render();
 }
-async function copySummary(){
-  var txt=summaryText(day()),btn=document.getElementById("copyBtn");
-  var ok=false;
-  try{await navigator.clipboard.writeText(txt);ok=true;}catch(e){}
-  if(!ok){
-    var sm=document.getElementById("summary");
-    try{var r=document.createRange();r.selectNodeContents(sm);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}catch(e){}
-  }
-  if(btn){btn.textContent=ok?"복사했어요":"위 글을 길게 눌러 복사하세요";setTimeout(function(){btn.textContent="복사해서 채팅·옵시디언에 붙여넣기";},2500);}
-}
 document.addEventListener("click",function(ev){
   var b=ev.target.closest("[data-act]");if(!b)return;
   var a=b.dataset.act,d=day(),e;
@@ -929,7 +916,6 @@ document.addEventListener("click",function(ev){
     case "painLv":
       if(d.pain[b.dataset.area]){d.pain[b.dataset.area].level=+b.dataset.lv;touch();render();}break;
     case "morning":d.morning=b.dataset.v;touch();render();break;
-    case "copy":copySummary();break;
     case "addMeal":addMeal();break;
     case "editEx":S.editEx=S.editEx===b.dataset.ex?"":b.dataset.ex;render();break;
     case "classifyAll":classifyAll();break;
