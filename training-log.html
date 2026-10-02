@@ -1,11 +1,11 @@
-<title>트레이닝 로그</title>
+<title>Night Reps</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <style>
 /* Layout: 하단 여백 있는 단일 컬럼 모바일 우선 앱. 상단 고정 탭, 본문은 카드 스택. 숫자는 Barlow Condensed(운동 기록판 느낌). */
 :root{
   --bg:#F2F4F8; --surface:#FFFFFF; --surface2:#E8ECF3; --line:#D3DAE6;
   --fg:#121A27; --muted:#59657A;
-  --accent:#2447E0; --accent-fg:#FFFFFF; --accent-soft:#E2E8FF;
+  --accent:#6A3BD9; --accent-fg:#FFFFFF; --accent-soft:#ECE4FF;
   --good:#12744A; --good-soft:#DAF2E6;
   --warn:#8F5400; --warn-soft:#FFEDCC;
   --bad:#B3261E; --bad-soft:#FCE2E0;
@@ -16,7 +16,7 @@
   :root:not([data-theme="light"]){
     --bg:#0D121A; --surface:#161D28; --surface2:#202938; --line:#2D3849;
     --fg:#E8EDF5; --muted:#97A3B6;
-    --accent:#86A2FF; --accent-fg:#0D121A; --accent-soft:#1F2B55;
+    --accent:#C084FC; --accent-fg:#0D121A; --accent-soft:#35285C;
     --good:#5BD39A; --good-soft:#14332A;
     --warn:#F2B65A; --warn-soft:#3A2C12;
     --bad:#FF8F85; --bad-soft:#3D1C1A;
@@ -26,7 +26,7 @@
 :root[data-theme="dark"]{
   --bg:#0D121A; --surface:#161D28; --surface2:#202938; --line:#2D3849;
   --fg:#E8EDF5; --muted:#97A3B6;
-  --accent:#86A2FF; --accent-fg:#0D121A; --accent-soft:#1F2B55;
+  --accent:#C084FC; --accent-fg:#0D121A; --accent-soft:#35285C;
   --good:#5BD39A; --good-soft:#14332A;
   --warn:#F2B65A; --warn-soft:#3A2C12;
   --bad:#FF8F85; --bad-soft:#3D1C1A;
@@ -42,13 +42,13 @@ h1,h2,h3,p{margin:0}
 
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;display:flex;flex-direction:column;gap:10px}
 .brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-.brand h1{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.brand h1{font-family:var(--font-num);font-size:24px;font-weight:700;letter-spacing:.14em;color:var(--accent)}
 .sync{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
 .sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .sync.cloud::before{background:var(--good)}
 .sync.saving::before{background:var(--warn)}
 .sync.err::before{background:var(--bad)}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface2);border-radius:12px;padding:3px;gap:3px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface2);border-radius:12px;padding:3px;gap:3px}
 .tabs button{border:0;background:transparent;border-radius:9px;padding:9px 0;font-weight:500;color:var(--muted)}
 .tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);font-weight:700}
 
@@ -122,6 +122,17 @@ input.num{font-family:var(--font-num);font-weight:600;font-size:22px;text-align:
 
 pre.summary{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--font-body);font-size:14px}
 .empty{color:var(--muted);font-size:14px}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:10px 13px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.55}
+.msg.user{align-self:flex-end;background:var(--accent-soft);border-bottom-right-radius:5px}
+.msg.coach{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px}
+.msg.err{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.coachin{display:flex;gap:8px;align-items:flex-end}
+.coachin textarea{flex:1;min-height:48px}
+.coachin .btn{min-width:60px;height:48px}
+.ctx{font-size:12px;color:var(--muted);text-align:center}
+details.card summary{cursor:pointer;font-weight:700;font-size:14px}
+details.card textarea{min-height:200px;margin-top:10px}
 
 .hist{display:flex;flex-direction:column;gap:8px}
 .hist button{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;width:100%}
@@ -152,9 +163,10 @@ svg .val{fill:var(--fg);font-size:13px;font-weight:700;font-family:var(--font-nu
 
 <div id="app">
   <header class="top">
-    <div class="brand"><h1>트레이닝 로그</h1><span id="sync" class="sync">불러오는 중</span></div>
+    <div class="brand"><h1>NIGHT REPS</h1><span id="sync" class="sync">불러오는 중</span></div>
     <nav class="tabs" role="tablist" aria-label="화면">
       <button role="tab" data-act="tab" data-tab="today" aria-selected="true">오늘</button>
+      <button role="tab" data-act="tab" data-tab="coach" aria-selected="false">코치</button>
       <button role="tab" data-act="tab" data-tab="history" aria-selected="false">기록</button>
       <button role="tab" data-act="tab" data-tab="trend" aria-selected="false">추이</button>
     </nav>
@@ -181,6 +193,8 @@ var PRESET={
 var SPLITS=Object.keys(PRESET);
 var AREAS=["어깨","발목","무릎","허리","손목","팔꿈치","목"];
 var DEFAULTS=["레그프레스","체스트프레스","랫풀다운","숄더프레스머신","스쿼트","시티드로우"];
+var PROFILE_DEFAULT="[회원 프로필 — 절대 잊지 말 것]\n- 만 32세 남성, 175cm / 약 80kg\n- 목표: 린벌크(하루 2,850~2,900kcal, 단백질 160g) 후 커팅 전환\n- 밤 22시 이후에만 운동 가능(직업 특성). 주 4일 상/하체 분할. 경력 1~3년\n- 어깨·발목 부상으로 3개월 쉬고 복귀한 지 얼마 안 됨 → 복귀 페이즈(2~3주)\n  · 룰: 예전 무게의 50~60%, 모든 종목 첫 세트는 가볍게 테스트, 관절 찌릿하면 그 동작 즉시 중단\n  · 어깨: 견갑 고정 시 통증 없음 확인됨. 프레스 몰빵 금지(하루 3종목 이내), 딥스는 마지막, 당기기로 밸런스\n  · 발목: 7/10 첫 테스트에서 레그프레스 60→90kg 4세트 이상 없음. 스쿼트는 가동범위 축소로 복귀 고려\n- 수면 과제: 새벽 2:30 취침 습관 → 1:30 이전 목표. 수면 7시간 사수\n- 위장 예민(매스틱검 복용). 자기 전 맵고 기름진 음식 금지\n- 카페인 컷오프 17시";
+var PERSONA="너는 이 회원의 개인 헬스 트레이너다. 엄청 친한 사이라 반말로 카톡하듯 짧고 시원하게 대화한다(이모지 가끔, ㅋㅋ 가능). 근거 있는 코칭을 하되 잔소리는 핵심만. 위험 신호(관절 통증, 수면 부족, 복귀 페이즈 룰 위반)는 확실하게 잡아주고, 부상 위험이 있는 요청은 대안을 제시하며 말린다. 운동·체중·통증 기록은 앱에 이미 구조화되어 아래에 있으니 다시 묻지 말고 활용하되, 기록에 없는 건 물어봐라. 답변은 보통 3~6문장 이내로 짧게.";
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function uid(){return Math.random().toString(36).slice(2,8);}
@@ -197,7 +211,7 @@ function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 
 /* ---------- 상태 ---------- */
 var TODAY=ymd(new Date());
-var S={days:{},date:TODAY,tab:"today",armed:null,trendEx:""};
+var S={days:{},date:TODAY,tab:"today",armed:null,trendEx:"",coach:{messages:[],summary:"",profile:"",updatedAt:0},draft:"",sample:null,sampleChecked:false,coachBusy:false,liveText:""};
 var dbh=null;
 
 function blank(date){return {date:date,split:"",exercises:[],weight:null,sleep:null,diet:"",pain:{},morning:null,note:"",updatedAt:0};}
@@ -222,6 +236,18 @@ function lsSave(){
 }
 function lsLoad(){
   try{var o=JSON.parse(lsGet(LS_KEY)||"{}");Object.keys(o).forEach(function(k){S.days[k]=normalize(o[k],k);});}catch(e){}
+}
+var LS_COACH="tlog.coach",coachTimer=null;
+function coachLoad(){
+  try{var o=JSON.parse(lsGet(LS_COACH)||"null");if(o&&typeof o==="object"){S.coach.messages=Array.isArray(o.messages)?o.messages:[];S.coach.summary=o.summary||"";S.coach.profile=o.profile||"";S.coach.updatedAt=o.updatedAt||0;}}catch(e){}
+  if(!S.coach.profile)S.coach.profile=PROFILE_DEFAULT;
+}
+function coachPersist(){
+  S.coach.updatedAt=Date.now();
+  lsSet(LS_COACH,JSON.stringify(S.coach));
+  if(!dbh)return;
+  clearTimeout(coachTimer);
+  coachTimer=setTimeout(async function(){try{await dbh.doc("meta/coach").set(clone(S.coach));}catch(e){}},800);
 }
 var pending={},timer=null,flushing=false;
 function setSync(kind){
@@ -262,6 +288,13 @@ async function initDb(){
     });
     Object.keys(S.days).forEach(function(k){if(hasContent(S.days[k])&&!snap.docs.some(function(d){return d.id===k;}))pending[k]=true;});
     lsSave();
+    try{
+      var cs=await db.doc("meta/coach").get();
+      if(cs.exists){
+        var cr=cs.data();
+        if((cr.updatedAt||0)>(S.coach.updatedAt||0)){S.coach.messages=cr.messages||[];S.coach.summary=cr.summary||"";S.coach.profile=cr.profile||S.coach.profile;S.coach.updatedAt=cr.updatedAt||0;lsSet(LS_COACH,JSON.stringify(S.coach));}
+      }else if(S.coach.updatedAt){coachPersist();}
+    }catch(e){}
     var a=document.activeElement;
     if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render();
     if(Object.keys(pending).length){setSync("saving");flush();}else setSync("cloud");
@@ -321,7 +354,7 @@ var view=document.getElementById("view");
 function render(){
   var y=window.scrollY;
   document.querySelectorAll(".tabs button").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.tab===S.tab));});
-  view.innerHTML=S.tab==="today"?renderToday():S.tab==="history"?renderHistory():renderTrend();
+  view.innerHTML=S.tab==="today"?renderToday():S.tab==="coach"?renderCoach():S.tab==="history"?renderHistory():renderTrend();
   window.scrollTo(0,y);
 }
 function dateLabel(){
@@ -460,6 +493,84 @@ function refreshLive(){
 function touch(){day().updatedAt=Date.now();persist(S.date);}
 function findEx(id){return day().exercises.find(function(e){return e.id===id;});}
 
+/* ---------- AI 코치 ---------- */
+var coachCtl=null;
+var QUICK=["오늘 세션 피드백 줘","다음 하체 루틴 짜줘","컨디션·통증 체크해줘","식단·수면 점검해줘"];
+function errCopy(code){
+  if(code==="not_granted"||code==="sampling_disabled"||code==="not_declared"||code==="capability_disabled"||code==="capability_removed")return "이 화면에서는 Claude 사용이 허용되지 않았어요. 아티팩트를 다시 열어 허용해 주세요.";
+  if(code==="rate_limited")return "요청이 너무 많거나 사용량 한도예요. 잠시 후 다시 보내주세요.";
+  if(code==="session_expired")return "로그인이 만료됐어요. 다시 로그인한 뒤 열어주세요.";
+  return "연결이 잠깐 끊겼어요. 같은 메시지를 다시 보내주세요.";
+}
+function systemText(){
+  var ks=Object.keys(S.days).filter(function(k){return hasContent(S.days[k]);}).sort();
+  var wts=ks.filter(function(k){return S.days[k].weight!=null;}).slice(-6).map(function(k){return md(k)+" "+fmt(S.days[k].weight)+"kg";}).join(", ")||"없음";
+  var td=S.days[TODAY]&&hasContent(S.days[TODAY])?summaryText(S.days[TODAY]):"아직 기록 없음";
+  var prev=ks.filter(function(k){return k<TODAY;}).slice(-4).map(function(k){return summaryText(S.days[k]);}).join("\n\n")||"없음";
+  var now=new Date();
+  return PERSONA+"\n\n"+S.coach.profile+"\n\n[이전 대화 요약]\n"+(S.coach.summary||"(아직 없음)")+"\n\n[최근 체중] "+wts+"\n\n[오늘 기록]\n"+td+"\n\n[최근 세션]\n"+prev+"\n\n오늘 날짜: "+TODAY+" (현재 시각 "+pad(now.getHours())+":"+pad(now.getMinutes())+")";
+}
+function msgHtml(m){return '<div class="msg '+(m.role==="user"?"user":"coach")+(m.err?" err":"")+'">'+esc(m.content)+'</div>';}
+function renderCoach(){
+  var c=S.coach,h="";
+  if(S.sampleChecked&&!S.sample)h+='<div class="notice warn">AI 코치는 Claude에서 이 아티팩트를 열었을 때만 쓸 수 있어요. 지금 화면에서는 기록·타이머·추이만 동작합니다.</div>';
+  h+='<div class="chat" id="chat">';
+  if(!c.messages.length&&!S.coachBusy)h+='<div class="msg coach">왔냐 ㅋㅋ 이제 기록은 오늘 탭에 쌓고, 나한테는 여기서 물어봐.\n\n내가 오늘 기록, 최근 세션, 체중, 통증 체크를 다 보고 있으니까 숫자 다시 안 보내도 돼. 오늘 뭐부터 갈까? 💪</div>';
+  h+=c.messages.map(msgHtml).join("");
+  if(S.coachBusy)h+='<div class="msg coach" id="live">'+(S.liveText?esc(S.liveText):"코치 생각 중…")+'</div>';
+  h+='</div>';
+  h+='<div class="chips">'+QUICK.map(function(q){return '<button class="chip" data-act="coachAsk" data-q="'+esc(q)+'"'+(S.coachBusy||!S.sample?" disabled":"")+'>'+esc(q)+'</button>';}).join("")+'</div>';
+  h+='<div class="coachin"><textarea id="coachInput" data-f="coachDraft" rows="2" aria-label="코치에게 메시지" placeholder="코치한테 편하게 던져…">'+esc(S.draft)+'</textarea>'
+    +(S.coachBusy?'<button class="btn" data-act="coachStop">중지</button>':'<button class="btn primary" data-act="coachSend"'+(S.sample?"":" disabled")+'>보내기</button>')+'</div>';
+  var n=c.messages.length;
+  h+='<p class="ctx">'+(c.summary?"이전 대화 요약 보관 중 · 최근 메시지 "+n+"개":(n?"메시지 "+n+"개 · 30개 넘으면 자동 요약":""))+'</p>';
+  h+='<details class="card"><summary>회원 프로필 (코치가 항상 기억해요)</summary><textarea id="f-profile" data-f="profile" aria-label="회원 프로필">'+esc(c.profile)+'</textarea><button class="btn ghost" data-act="profileReset">기본값으로 되돌리기</button></details>';
+  h+='<button class="btn'+(S.armed==="clearChat"?" danger":" ghost")+'" data-act="clearChat">'+(S.armed==="clearChat"?"한 번 더 누르면 대화가 삭제돼요":"대화 비우기")+'</button>';
+  return h;
+}
+function scrollCoach(){var el=document.getElementById("coachInput");if(el&&el.scrollIntoView)el.scrollIntoView({block:"end"});}
+async function coachSend(text){
+  text=(text||"").trim();
+  if(!text||S.coachBusy||!S.sample)return;
+  var c=S.coach;
+  c.messages.push({role:"user",content:text});
+  S.draft="";S.coachBusy=true;S.liveText="";
+  coachPersist();render();scrollCoach();
+  var turns=[{role:"user",content:systemText()}].concat(c.messages.filter(function(m){return !m.err;}).slice(-20).map(function(m){return {role:m.role,content:m.content};}));
+  coachCtl=new AbortController();
+  try{
+    var r=await S.sample(turns,{cache:false,signal:coachCtl.signal,onText:function(u){S.liveText=u.text;var el=document.getElementById("live");if(el)el.textContent=u.text;}});
+    c.messages.push({role:"assistant",content:r.text});
+  }catch(e){
+    if(e&&e.text)c.messages.push({role:"assistant",content:e.text+"\n(중간에 끊겼어요)"});
+    if(!e||e.code!=="cancelled")c.messages.push({role:"assistant",err:true,content:errCopy(e&&e.code)});
+  }
+  S.coachBusy=false;S.liveText="";coachCtl=null;
+  coachPersist();
+  if(S.tab==="coach"){render();scrollCoach();}
+  compress();
+}
+async function compress(){
+  var c=S.coach;
+  if(c.messages.length<=30||!S.sample)return;
+  var n=c.messages.length-14;
+  var old=c.messages.slice(0,n).filter(function(m){return !m.err;});
+  try{
+    var txt=old.map(function(m){return (m.role==="user"?"회원":"코치")+": "+m.content;}).join("\n");
+    var r=await S.sample("다음 트레이너-회원 대화를 5~8줄로 요약해. 진행 상황, 결정 사항, 부상·컨디션 정보, 다음 계획 위주. 기존 요약이 있으면 통합해. 요약만 출력.\n\n[기존 요약]\n"+(c.summary||"없음")+"\n\n[대화]\n"+txt,{cache:false,modelTier:"quick"});
+    if(c.messages.length<n)return;
+    c.summary=r.text;c.messages=c.messages.slice(n);
+    coachPersist();
+    if(S.tab==="coach"&&!S.coachBusy)render();
+  }catch(e){}
+}
+async function initSample(){
+  try{if(window.claude&&window.claude.use)S.sample=(await window.claude.use("sample"))||null;}catch(e){S.sample=null;}
+  S.sampleChecked=true;
+  var a=document.activeElement;
+  if(S.tab==="coach"&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render();
+}
+
 /* ---------- 타이머 ---------- */
 var T={end:0,iv:null,hideAt:null};
 function startTimer(){
@@ -550,12 +661,19 @@ document.addEventListener("click",function(ev){
       if(d.pain[b.dataset.area]){d.pain[b.dataset.area].level=+b.dataset.lv;touch();render();}break;
     case "morning":d.morning=b.dataset.v;touch();render();break;
     case "copy":copySummary();break;
+    case "coachSend":var ci=document.getElementById("coachInput");coachSend(ci&&ci.value);break;
+    case "coachAsk":coachSend(b.dataset.q);break;
+    case "coachStop":if(coachCtl)coachCtl.abort();break;
+    case "profileReset":S.coach.profile=PROFILE_DEFAULT;coachPersist();render();break;
+    case "clearChat":arm("clearChat",function(){S.coach.messages=[];S.coach.summary="";coachPersist();render();});break;
     case "timerStop":stopTimer();break;
   }
 });
 document.addEventListener("input",function(ev){
   var t=ev.target,f=t.dataset&&t.dataset.f;if(!f)return;
   var d=day();
+  if(f==="coachDraft"){S.draft=t.value;return;}
+  if(f==="profile"){S.coach.profile=t.value;coachPersist();return;}
   if(f==="w"||f==="r"){
     var e=findEx(t.dataset.ex);if(!e||!e.sets[+t.dataset.i])return;
     e.sets[+t.dataset.i][f]=num(t.value);
@@ -571,12 +689,15 @@ document.addEventListener("change",function(ev){
 });
 document.addEventListener("keydown",function(ev){
   if(ev.key==="Enter"&&ev.target.id==="newEx"){ev.preventDefault();addExercise(ev.target.value);}
+  if(ev.key==="Enter"&&!ev.shiftKey&&!ev.isComposing&&ev.target.id==="coachInput"){ev.preventDefault();coachSend(ev.target.value);}
 });
 
 /* ---------- 시작 ---------- */
 lsLoad();
+coachLoad();
 setSync("local");
 render();
 initDb();
+initSample();
 })();
 </script>
