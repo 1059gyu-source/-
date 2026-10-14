@@ -206,11 +206,11 @@ svg .val{fill:var(--fg);font-size:13px;font-weight:700;font-family:var(--font-nu
 var WD=["일","월","화","수","목","금","토"];
 var LV=["이상 없음","경미","찌릿","중단"];
 var PRESET={
-  "가슴·삼두":["인클라인프레스머신","인클라인스미스머신","체스트프레스","레버리지체스트프레스","딥스머신","케이블푸시다운"],
-  "등·이두":["랫풀다운","시티드로우","풀업","암풀다운","바벨컬","덤벨컬"],
+  "가슴·삼두":["Ytw레이즈","숄더프레스 스미스머신","인클라인스미스머신","체스트프레스","인클라인프레스머신","삼두 슈퍼세트 1","딥스머신"],
+  "등·이두":["Ytw레이즈","풀업","랫풀다운","시티드로우","로우로우머신","Mts하이 로우","사이드레터럴레이즈","바벨컬"],
   "하체A":["레그프레스","레그컬","레그익스텐션","카프레이즈","스쿼트","힙쓰러스트"],
   "하체B":["스쿼트","루마니안데드리프트","힙쓰러스트","레그컬","어덕터","어브덕터"],
-  "어깨":["숄더프레스머신","사이드레터럴레이즈","리어델트플라이","페이스풀","YTW레이즈"],
+  "어깨":["숄더프레스머신","사이드레터럴레이즈","리어델트플라이","페이스풀","Ytw레이즈"],
   "휴식":[]
 };
 var SPLITS=Object.keys(PRESET);
@@ -345,9 +345,9 @@ function guess(name){
   else if(/컬|이두/.test(n)){m="이두";pt="curl";}
   else if(/체스트|벤치|인클라인|디클라인|펙덱|플라이|푸시업|크로스오버/.test(n)){m="가슴";pt=/플라이|펙덱|크로스/.test(n)?"fly":"press";}
   else if(/크런치|플랭크|복근|레그레이즈|싯업/.test(n)){m="복근";pt="core";}
-  return {muscle:m,secondary:"",pattern:pt,assist:/어시스트/.test(n),tip:"",src:"규칙"};
+  return {muscle:m,secondary:"",pattern:pt,assist:/어시스트/.test(n),bw:!/어시스트|머신/.test(n)&&/풀업|친업|턱걸이|푸시업|플랭크|크런치|싯업|레그레이즈|행잉|딥스/.test(n),tip:"",src:"규칙"};
 }
-function info(name){return (S.coach.exInfo&&S.coach.exInfo[name])||guess(name);}
+function info(name){var x=S.coach.exInfo&&S.coach.exInfo[name];if(!x)return guess(name);if(x.bw===undefined)return Object.assign({},x,{bw:guess(name).bw});return x;}
 function isPress(name){var i=info(name);return (i.pattern==="press"&&(i.muscle==="가슴"||i.muscle==="어깨"))||/딥스/.test(name);}
 function patLabel(k){for(var i=0;i<PATTERNS.length;i++)if(PATTERNS[i][0]===k)return PATTERNS[i][1];return "기타";}
 function softRender(){var a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render();}
@@ -356,11 +356,11 @@ async function classify(names){
   if(!names.length||!S.sample)return;
   names.forEach(function(n){S.classifying[n]=1;});
   try{
-    var res=await S.sample.json('다음 헬스 종목들을 분류해. JSON 배열만 출력. 각 항목: {"name":"입력 그대로","muscle":"가슴|등|어깨|이두|삼두|대퇴사두|햄스트링|둔근|종아리|복근|기타 중 하나(주동근)","secondary":"보조근 최대 2개를 · 로 연결한 문자열, 없으면 빈 문자열","pattern":"press|pull|squat|hinge|curl|extension|raise|fly|calf|core|other 중 하나","assist":true면 어시스트 머신(중량 숫자가 클수록 쉬워지는 머신, 예: 어시스트 풀업),"tip":"어깨·발목 부상에서 복귀 중인 회원이 주의할 점 한 문장(40자 이내)"}\n\n종목: '+JSON.stringify(names),{modelTier:"quick"});
+    var res=await S.sample.json('다음 헬스 종목들을 분류해. JSON 배열만 출력. 각 항목: {"name":"입력 그대로","muscle":"가슴|등|어깨|이두|삼두|대퇴사두|햄스트링|둔근|종아리|복근|기타 중 하나(주동근)","secondary":"보조근 최대 2개를 · 로 연결한 문자열, 없으면 빈 문자열","pattern":"press|pull|squat|hinge|curl|extension|raise|fly|calf|core|other 중 하나","assist":true면 어시스트 머신(중량 숫자가 클수록 쉬워지는 머신, 예: 어시스트 풀업),"bw":true면 맨몸 운동(자기 체중이 부하라 무게를 안 넣음, 예: 풀업·푸시업·플랭크. 머신·어시스트·덤벨이 있으면 false),"tip":"어깨·발목 부상에서 복귀 중인 회원이 주의할 점 한 문장(40자 이내)"}\n\n종목: '+JSON.stringify(names),{modelTier:"quick"});
     if(Array.isArray(res))res.forEach(function(r){
       if(!r||names.indexOf(r.name)<0)return;
       var pk=PATTERNS.map(function(x){return x[0];});
-      S.coach.exInfo[r.name]={muscle:MUSCLES.indexOf(r.muscle)>=0?r.muscle:"기타",secondary:String(r.secondary||"").slice(0,30),pattern:pk.indexOf(r.pattern)>=0?r.pattern:"other",assist:r.assist===true,tip:String(r.tip||"").slice(0,60),src:"AI"};
+      S.coach.exInfo[r.name]={muscle:MUSCLES.indexOf(r.muscle)>=0?r.muscle:"기타",secondary:String(r.secondary||"").slice(0,30),pattern:pk.indexOf(r.pattern)>=0?r.pattern:"other",assist:r.assist===true,bw:r.bw===true&&r.assist!==true,tip:String(r.tip||"").slice(0,60),src:"AI"};
     });
     coachPersist();
   }catch(e){}
@@ -380,7 +380,7 @@ async function classifyAll(){
 }
 function tagHtml(e){
   var i=info(e.name),busy=!!S.classifying[e.name];
-  var t=i.muscle+(i.secondary?" · 보조 "+i.secondary:"")+" · "+patLabel(i.pattern)+(i.assist?" · 어시스트":"")+(busy?" · 분류 중…":i.src==="규칙"?" · 이름 규칙 추정":"");
+  var t=i.muscle+(i.secondary?" · 보조 "+i.secondary:"")+" · "+patLabel(i.pattern)+(i.assist?" · 어시스트":"")+(i.bw?" · 맨몸":"")+(busy?" · 분류 중…":i.src==="규칙"?" · 이름 규칙 추정":"");
   var h='<p class="tagline">'+esc(t)+'</p>'+(i.tip?'<p class="tip">'+esc(i.tip)+'</p>':"")
     +'<button class="linkbtn" data-act="editEx" data-ex="'+e.id+'">'+(S.editEx===e.id?"분류 닫기":"분류 수정")+'</button>';
   return h;
@@ -392,7 +392,8 @@ function editPanel(e){
       +MUSCLES.map(function(m){return '<option'+(m===i.muscle?" selected":"")+'>'+m+'</option>';}).join("")+'</select></div>'
       +'<div class="field"><label for="p-'+e.id+'">동작 유형</label><select id="p-'+e.id+'" data-f="exPattern" data-ex="'+e.id+'">'
       +PATTERNS.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===i.pattern?" selected":"")+'>'+x[1]+'</option>';}).join("")+'</select></div></div>'
-      +'<label class="chk-l"><input type="checkbox" data-f="exAssist" data-ex="'+e.id+'"'+(i.assist?" checked":"")+'> 어시스트 머신 (숫자가 클수록 쉬워요. 볼륨에서 제외)</label></div>';
+      +'<label class="chk-l"><input type="checkbox" data-f="exAssist" data-ex="'+e.id+'"'+(i.assist?" checked":"")+'> 어시스트 머신 (숫자가 클수록 쉬워요. 볼륨에서 제외)</label>'
+      +'<label class="chk-l"><input type="checkbox" data-f="exBw" data-ex="'+e.id+'"'+(i.bw?" checked":"")+'> 맨몸 운동 (무게 칸은 추가 중량, 비우면 맨몸)</label></div>';
   }
   return h;
 }
@@ -416,7 +417,7 @@ function weeklyCard(){
 }
 
 /* ---------- 계산 ---------- */
-function setsStr(sets){return sets.filter(function(s){return s.w!=null||s.r!=null;}).map(function(s){return fmt(s.w==null?0:s.w)+"×"+(s.r==null?0:s.r);}).join(" ");}
+function setsStr(sets,bw){return sets.filter(function(s){return s.w!=null||s.r!=null;}).map(function(s){var w=s.w==null?0:s.w;return (bw?(w?"+"+fmt(w):"맨몸"):fmt(w))+"×"+(s.r==null?0:s.r);}).join(" ");}
 function exVol(e){if(info(e.name).assist)return 0;return e.sets.reduce(function(a,s){return a+((s.w!=null&&s.r!=null)?s.w*s.r:0);},0);}
 function dayVol(d){return d.exercises.reduce(function(a,e){return a+exVol(e);},0);}
 function lastOf(name,before){
@@ -450,7 +451,7 @@ function mealTotals(d){var k=0,p=0;(d.meals||[]).forEach(function(m){k+=m.kcal||
 function summaryText(d){
   var dt=parse(d.date);
   var L=["오늘 총정리 ("+(d.split||"운동")+" · "+WD[dt.getDay()]+"요일 · "+(dt.getMonth()+1)+"/"+dt.getDate()+")"];
-  d.exercises.forEach(function(e){var s=setsStr(e.sets).split(" ").join(", ");if(s)L.push("* "+e.name+" ("+info(e.name).muscle+"): "+s);});
+  d.exercises.forEach(function(e){var s=setsStr(e.sets,info(e.name).bw).split(" ").join(", ");if(s)L.push("* "+e.name+" ("+info(e.name).muscle+(info(e.name).bw?" · 맨몸":"")+"): "+s);});
   var v=[];
   if(d.weight!=null)v.push("체중 "+fmt(d.weight)+"kg");
   if(d.sleep!=null)v.push("수면 "+fmt(d.sleep)+"시간");
@@ -494,19 +495,20 @@ function morningHtml(d){
     +'<button class="btn" data-act="morning" data-v="ok">없음</button><button class="btn" data-act="morning" data-v="pain">있음</button></div></div>';
 }
 function setRow(e,s,i){
+  var bw=info(e.name).bw;
   return '<div class="set"><span class="n">'+(i+1)+'</span>'
-   +'<input class="num" inputmode="decimal" data-f="w" data-ex="'+e.id+'" data-i="'+i+'" value="'+(s.w==null?"":esc(s.w))+'" aria-label="'+(i+1)+'세트 무게(kg)" placeholder="kg">'
+   +'<input class="num" inputmode="decimal" data-f="w" data-ex="'+e.id+'" data-i="'+i+'" value="'+(s.w==null||(bw&&!s.w)?"":esc(s.w))+'" aria-label="'+(i+1)+(bw?'세트 추가 무게(kg), 비우면 맨몸':'세트 무게(kg)')+'" placeholder="'+(bw?'맨몸':'kg')+'">'
    +'<span class="x">×</span>'
    +'<input class="num" inputmode="numeric" data-f="r" data-ex="'+e.id+'" data-i="'+i+'" value="'+(s.r==null?"":esc(s.r))+'" aria-label="'+(i+1)+'세트 횟수" placeholder="회">'
    +'<button class="chk'+(s.done?" on":"")+'" data-act="done" data-ex="'+e.id+'" data-i="'+i+'" aria-pressed="'+!!s.done+'" aria-label="'+(i+1)+'세트 완료">✓</button>'
    +'<button class="del" data-act="delSet" data-ex="'+e.id+'" data-i="'+i+'" aria-label="'+(i+1)+'세트 삭제">✕</button></div>';
 }
-function volText(e){if(info(e.name).assist){var rr=e.sets.reduce(function(a,x){return a+(x.r||0);},0);return rr>0?"어시스트 · 총 "+rr+"회":"";}var v=exVol(e);return v>0?"볼륨 "+Math.round(v).toLocaleString("ko-KR")+"kg":"";}
+function volText(e){var inf=info(e.name);if(inf.assist||inf.bw){var rr=e.sets.reduce(function(a,x){return a+(x.r||0);},0),vv=inf.assist?0:exVol(e);return rr>0?(inf.assist?"어시스트":"맨몸")+" · 총 "+rr+"회"+(vv>0?" · 추가 "+Math.round(vv).toLocaleString("ko-KR")+"kg":""):"";}var v=exVol(e);return v>0?"볼륨 "+Math.round(v).toLocaleString("ko-KR")+"kg":"";}
 function exCard(e,idx,n){
   var last=lastOf(e.name,S.date);
   var armed=S.armed==="ex:"+e.id;
   return '<section class="card" data-exid="'+e.id+'"><div class="ex-head"><div class="ex-title"><h3>'+esc(e.name)+'</h3><p class="ref">'
-    +(last?"지난번 "+md(last.date)+" · "+esc(setsStr(last.sets)):"첫 기록")+'</p>'+tagHtml(e)+'</div><div class="ex-tools">'
+    +(last?"지난번 "+md(last.date)+" · "+esc(setsStr(last.sets,info(e.name).bw)):"첫 기록")+'</p>'+tagHtml(e)+'</div><div class="ex-tools">'
     +'<button class="ico sm" data-act="up" data-ex="'+e.id+'" aria-label="위로"'+(idx===0?" disabled":"")+'>↑</button>'
     +'<button class="ico sm" data-act="down" data-ex="'+e.id+'" aria-label="아래로"'+(idx===n-1?" disabled":"")+'>↓</button>'
     +(armed?'<button class="btn danger" style="min-height:32px;padding:0 10px" data-act="delEx" data-ex="'+e.id+'">삭제 확인</button>'
@@ -604,8 +606,8 @@ function mdText(d){
     L.push("## 운동");
     d.exercises.forEach(function(e){
       i=info(e.name);
-      L.push("### "+e.name+" ("+i.muscle+" · "+patLabel(i.pattern)+(i.assist?" · 어시스트":"")+")");
-      var ss=setsStr(e.sets);
+      L.push("### "+e.name+" ("+i.muscle+" · "+patLabel(i.pattern)+(i.assist?" · 어시스트":"")+(i.bw?" · 맨몸":"")+")");
+      var ss=setsStr(e.sets,i.bw);
       L.push(ss?"- "+ss.split(" ").join(", "):"- 기록 없음");
       if(!i.assist&&exVol(e)>0)L.push("- 볼륨 "+Math.round(exVol(e)).toLocaleString("ko-KR")+"kg");
     });
@@ -696,17 +698,17 @@ function chart(pts){
 function renderTrend(){
   var ks=Object.keys(S.days).sort();
   var wp=[];ks.forEach(function(k){var d=S.days[k];if(d.weight!=null)wp.push({x:md(k),y:d.weight});});
-  var names={};ks.forEach(function(k){S.days[k].exercises.forEach(function(e){if(e.name&&e.sets.some(function(s){return s.w!=null;}))names[e.name]=1;});});
+  var names={};ks.forEach(function(k){S.days[k].exercises.forEach(function(e){if(e.name&&e.sets.some(function(s){return s.w!=null||s.r!=null;}))names[e.name]=1;});});
   var list=Object.keys(names).sort();
   if(!S.trendEx||!names[S.trendEx])S.trendEx=list[0]||"";
-  var ep=[];
+  var ep=[],bwSel=!!S.trendEx&&info(S.trendEx).bw;
   if(S.trendEx)ks.forEach(function(k){
     var e=S.days[k].exercises.find(function(x){return x.name===S.trendEx;});if(!e)return;
-    var ws=e.sets.filter(function(s){return s.w!=null;}).map(function(s){return s.w;});
+    var ws=e.sets.filter(function(s){return bwSel?s.r!=null:s.w!=null;}).map(function(s){return bwSel?s.r:s.w;});
     if(ws.length)ep.push({x:md(k),y:Math.max.apply(null,ws)});
   });
   return weeklyCard()+'<section class="card"><h2>체중 (kg)</h2>'+chart(wp)+'</section>'
-   +'<section class="card"><h2>종목별 최고 중량 (kg)</h2>'
+   +'<section class="card"><h2>'+(bwSel?'종목별 최고 횟수 (회)':'종목별 최고 중량 (kg)')+'</h2>'
    +(list.length?'<select id="trendEx" data-f="trendEx" aria-label="종목 선택">'+list.map(function(n){return '<option value="'+esc(n)+'"'+(n===S.trendEx?" selected":"")+'>'+esc(n)+'</option>';}).join("")+'</select>'+chart(ep):'<p class="empty">무게를 기록한 종목이 생기면 선택해서 볼 수 있어요.</p>')
    +'</section>';
 }
@@ -736,7 +738,7 @@ function systemText(){
   var td=S.days[TODAY]&&hasContent(S.days[TODAY])?summaryText(S.days[TODAY]):"아직 기록 없음";
   var prev=ks.filter(function(k){return k<TODAY;}).slice(-4).map(function(k){return summaryText(S.days[k]);}).join("\n\n")||"없음";
   var nm={};ks.filter(function(k){return k<=TODAY;}).slice(-5).forEach(function(k){S.days[k].exercises.forEach(function(e){nm[e.name]=1;});});
-  var cls=Object.keys(nm).map(function(n){var i=info(n);return "- "+n+": "+i.muscle+(i.secondary?"(보조 "+i.secondary+")":"")+" · "+patLabel(i.pattern)+(i.assist?" · 어시스트(볼륨 제외)":"");}).join("\n")||"없음";
+  var cls=Object.keys(nm).map(function(n){var i=info(n);return "- "+n+": "+i.muscle+(i.secondary?"(보조 "+i.secondary+")":"")+" · "+patLabel(i.pattern)+(i.assist?" · 어시스트(볼륨 제외)":"")+(i.bw?" · 맨몸(무게 칸이 비면 체중만 사용)":"");}).join("\n")||"없음";
   var now=new Date();
   return PERSONA+"\n\n"+S.coach.profile+"\n\n[이전 대화 요약]\n"+(S.coach.summary||"(아직 없음)")+"\n\n[일일 목표] 칼로리 "+S.coach.goal.kcal+"kcal · 단백질 "+S.coach.goal.protein+"g\n\n[최근 체중] "+wts+"\n\n[오늘 기록]\n"+td+"\n\n[최근 세션]\n"+prev+"\n\n[종목 분류]\n"+cls+"\n\n오늘 날짜: "+TODAY+" (현재 시각 "+pad(now.getHours())+":"+pad(now.getMinutes())+")";
 }
@@ -953,10 +955,10 @@ document.addEventListener("change",function(ev){
   var t=ev.target;
   var f=t.dataset&&t.dataset.f;
   if(f==="trendEx"){S.trendEx=t.value;render();}
-  else if(f==="exMuscle"||f==="exPattern"||f==="exAssist"){
+  else if(f==="exMuscle"||f==="exPattern"||f==="exAssist"||f==="exBw"){
     var e=findEx(t.dataset.ex);if(!e)return;
     var cur=Object.assign({},info(e.name));
-    if(f==="exMuscle")cur.muscle=t.value;else if(f==="exPattern")cur.pattern=t.value;else cur.assist=!!t.checked;
+    if(f==="exMuscle")cur.muscle=t.value;else if(f==="exPattern")cur.pattern=t.value;else if(f==="exBw")cur.bw=!!t.checked;else cur.assist=!!t.checked;
     cur.src="직접";S.coach.exInfo[e.name]=cur;coachPersist();render();
   }
 });
